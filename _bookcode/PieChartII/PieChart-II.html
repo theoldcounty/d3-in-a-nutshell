@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>PieChart II</title>
+
+		<!--libs-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://d3js.org/d3.v4.min.js"></script>
+
+		<!--js-->
+		<script>
+			
+			$(document).ready(function() {
+				//d3 cookbook - PieChart II
+
+				var $this = $('.piechart');
+
+				var data = [
+				    {
+				        label: 'Jam',
+				        value: 50,
+				    },
+				    {
+				        label: 'Coconut',
+				        value: 10,
+				    },
+				    {
+				        label: 'Nutmeg',
+				        value: 20,
+				    },
+				    {
+				        label: 'Tumeric',
+				        value: 20,
+				    },
+				];
+
+		        var width = $this.data('width'),
+		            height = $this.data('height'),
+		            radius = $this.data('r'),
+		            innerradius = $this.data('ir');
+
+		        var color = d3.scaleOrdinal()
+		            .range(["#f0cf85", "#e7f0c3", "#a4d4ae", "#32afa9"]);
+
+		        var arc = d3.arc()
+		            .outerRadius(radius - 10)
+		            .innerRadius(innerradius);
+
+		        var labelArc = d3.arc()
+		            .outerRadius(radius - 40)
+		            .innerRadius(radius - 40);
+
+				data.forEach(function(d) {
+					d.total = +d.value;
+				});
+
+		        var pie = d3.pie()
+		            .sort(null)
+		            .value(function(d) { return d.total; });
+
+		        var pieData = pie(data);
+
+		        var svg = d3.select($this[0])
+		        	.append("svg")
+		            .attr("width", width)
+		            .attr("height", height)
+					.append("g")
+					.attr('class', 'piechart')
+					.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+				var segments = svg.append('g').attr('class', 'segments');
+
+				var slices = segments.selectAll(".arc")
+					.data(pieData)
+					.enter().append("g")
+					.attr("class", "arc");
+
+				slices.append("path")
+					.attr("d", arc)
+					.attr('fill', function(d, i) {
+						return color(i);
+					})
+
+				//__labels
+		        var labels = svg.append('g').attr('class', 'labels');
+
+		        var label = labels.selectAll('text').data(pieData)
+		            .enter()
+		            .append('text')
+		            .attr('text-anchor', 'middle');
+
+		        label
+		            .attr('x', function(d) {
+		                var a =
+		                    d.startAngle +
+		                    (d.endAngle - d.startAngle) / 2 -
+		                    Math.PI / 2;
+		                d.cx = Math.cos(a) * (innerradius + (radius - innerradius) / 2);
+		                return (d.x = Math.cos(a) * (radius + 20));
+		            })
+		            .attr('y', function(d) {
+		                var a =
+		                    d.startAngle +
+		                    (d.endAngle - d.startAngle) / 2 -
+		                    Math.PI / 2;
+		                d.cy = Math.sin(a) * (innerradius + (radius - innerradius) / 2);
+		                return (d.y = Math.sin(a) * (radius + 20));
+		            })
+		            .text(function(d) {
+		                return d.data.label;
+		            })
+		            .each(function(d) {
+		                var bbox = this.getBBox();
+		                d.sx = d.x - bbox.width / 2 - 2;
+		                d.ox = d.x + bbox.width / 2 + 2;
+		                d.sy = d.oy = d.y + 5;
+		            })
+		            .transition()
+		            .duration(300);
+
+		        labels.transition().duration(300);
+
+		        labels.exit().remove();
+		        //__labels
+
+		        //__pointers
+		        var pointers = svg.append('g').attr('class', 'pointers');
+
+		        pointers
+		            .append('defs')
+		            .append('marker')
+		            .attr('id', 'circ')
+		            .attr('markerWidth', 6)
+		            .attr('markerHeight', 6)
+		            .attr('refX', 3)
+		            .attr('refY', 3)
+		            .append('circle')
+		            .attr('cx', 3)
+		            .attr('cy', 3)
+		            .attr('r', 3);
+
+		        var pointer = pointers.selectAll('path.pointer').data(pieData)
+		            .enter()
+		            .append('path')
+		            .attr('class', 'pointer')
+		            .style('fill', 'none')
+		            .style('stroke', 'black')
+		            .attr('marker-end', 'url(#circ)');
+
+		        pointer
+		            .attr('d', function(d) {
+		                if (d.cx > d.ox) {
+		                    return (
+		                        'M' + d.sx + ',' +  d.sy +
+		                        'L' + d.ox + ',' + d.oy + ' ' + d.cx + ',' + d.cy
+		                    );
+		                } else {
+		                    return (
+		                        'M' + d.ox + ',' + d.oy + 
+		                        'L' + d.sx + ',' + d.sy + ' ' + d.cx + ',' + d.cy
+		                    );
+		                }
+		            })
+		            .transition()
+		            .duration(300);
+
+		        pointers.transition().duration(300);
+
+		        pointers.exit().remove();
+		        //__pointers
+
+				//d3 cookbook - PieChart II
+			});
+
+		</script>
+		<!--js-->
+
+		<!--css-->
+		<style>
+			body {
+				background: #ffd;
+			}
+
+			.arc text {
+				font: 10px sans-serif;
+				text-anchor: middle;
+			}
+
+			.arc path {
+				stroke: #fff;
+			}
+
+		</style>
+		<!--css-->
+	</head>
+	<body>
+
+		<h1>PieChart II</h1>
+		<!--html-->
+		<div
+			class="piechart"
+			data-width="300"
+			data-height="300"
+			data-r="110"
+			data-ir="20"
+		/>
+		<!--html-->
+
+	</body>
+</html>
