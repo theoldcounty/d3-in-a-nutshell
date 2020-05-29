@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>LineChart I</title>
+
+		<!--libs-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://d3js.org/d3.v4.min.js"></script>
+
+		<!--js-->
+		<script>
+			
+			$(document).ready(function() {
+				//d3 cookbook - LineChart I
+
+				var $this = $('.linechart');
+
+				var data = [
+				    {
+				        label: '12-Jun-12',
+				        value: 258.13,
+				    },
+				    {
+				        label: '1-May-12',
+				        value: 58.13,
+				    },
+				    {
+				        label: '30-Apr-12',
+				        value: 67.005,
+				    },
+				    {
+				        label: '16-Apr-12',
+				        value: 166.70,
+				    },
+				    {
+				        label: '27-Mar-12',
+				        value: 614.48,
+				    },
+				    {
+				        label: '17-Feb-12',
+				        value: 1614.48,
+				    },
+				];
+
+		        var width = $this.data('width'),
+		            height = $this.data('height');
+
+		        var color = d3.scaleOrdinal()
+		            .range(["#ff5200"]);
+
+				var parseTime = d3.timeParse("%d-%b-%y");
+				data.forEach(function(d) {
+					d.label = parseTime(d.label);
+					d.total = +d.value;
+				});
+
+				var margin = {top: 20, right: 15, bottom: 30, left: 20},
+				    width = width - margin.left - margin.right,
+				    height = height - margin.top - margin.bottom;
+
+				var x = d3.scaleTime().range([0, width]);
+				var y = d3.scaleLinear().range([height, 0]);
+
+				var valueline = d3.line()
+				    .x(function(d) { return x(d.label); })
+				    .y(function(d) { return y(d.value); });
+
+
+				x.domain(d3.extent(data, function(d) { return d.label; }));
+				y.domain([0, d3.max(data, function(d) { return d.total; })]);
+
+		        var svg = d3.select($this[0])
+		        	.append("svg")
+		            .attr("width", width + margin.left + margin.right)
+		            .attr("height", height + margin.top + margin.bottom)
+					.append("g")
+					.attr('class', 'linechart')
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+				var lines = svg.append('g').attr('class', 'lines');
+
+				lines.append("path")
+					.datum(data)
+					.attr("class", "line")
+					.attr('stroke', function(d, i) {
+						return color(i);
+					})					
+				    .attr("d", valueline);
+
+				lines.append("g")
+				  .attr("transform", "translate(0," + height + ")")
+				  .call(d3.axisBottom(x).ticks(d3.timeMonth.every(1)).tickFormat(d3.timeFormat("%b")));
+
+				lines.append("g")
+				  .call(d3.axisLeft(y));
+
+				//d3 cookbook - LineChart I
+			});
+
+		</script>
+		<!--js-->
+
+		<!--css-->
+		<style>
+			body {
+				background: #ffd;
+			}
+
+			.line {
+			  fill: none;
+			  stroke-width: 2px;
+			}
+
+		</style>
+		<!--css-->
+	</head>
+	<body>
+
+		<h1>LineChart I</h1>
+		<!--html-->
+		<div
+			class="linechart"
+			data-width="300"
+			data-height="300"
+		/>
+		<!--html-->
+
+	</body>
+</html>

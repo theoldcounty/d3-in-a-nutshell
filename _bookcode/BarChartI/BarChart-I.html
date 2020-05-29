@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>BarChart I</title>
+
+		<!--libs-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://d3js.org/d3.v4.min.js"></script>
+
+		<!--js-->
+		<script>
+			
+			$(document).ready(function() {
+				//d3 cookbook - BarChart I
+
+				var $this = $('.barchart');
+
+				var data = [
+				    {
+				        label: 'Gummi Bears',
+				        value: 20,
+				    },
+				    {
+				        label: 'Butterfinger',
+				        value: 5,
+				    },
+				    {
+				        label: 'Sour Patch Kids',
+				        value: 30,
+				    },
+				    {
+				        label: 'Almond Joy',
+				        value: 40,
+				    },
+				];
+
+		        var width = $this.data('width'),
+		            height = $this.data('height');
+
+		        var color = d3.scaleOrdinal()
+		            .range(["#eb6383", "#fa9191", "#ffe9c5", "#b4f2e1"]);
+
+				data.forEach(function(d) {
+					d.total = +d.value;
+				});
+
+				var margin = {top: 20, right: 5, bottom: 30, left: 20},
+				    width = width - margin.left - margin.right,
+				    height = height - margin.top - margin.bottom;
+
+				var x = d3.scaleBand()
+				          .range([0, width])
+				          .padding(0.1);
+				var y = d3.scaleLinear()
+				          .range([height, 0]);
+
+				x.domain(data.map(function(d) { return d.label; }));
+				y.domain([0, d3.max(data, function(d) { return d.total; })]);
+
+		        var svg = d3.select($this[0])
+		        	.append("svg")
+		            .attr("width", width + margin.left + margin.right)
+		            .attr("height", height + margin.top + margin.bottom)
+					.append("g")
+					.attr('class', 'barchart')
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+				var bars = svg.append('g').attr('class', 'bars');
+
+				bars.selectAll(".bar")
+					.data(data)
+					.enter().append("rect")
+					.attr("class", "bar")
+					.attr('fill', function(d, i) {
+						return color(i);
+					})
+					.attr("x", function(d) { return x(d.label); })
+					.attr("width", x.bandwidth())
+					.attr("y", function(d) { return y(d.value); })
+					.attr("height", function(d) { return height - y(d.total); });
+
+				bars.append("g")
+					.attr("transform", "translate(0," + height + ")")
+					.call(d3.axisBottom(x));
+
+				bars.append("g")
+					.call(d3.axisLeft(y));
+
+				//d3 cookbook - BarChart I
+			});
+
+		</script>
+		<!--js-->
+
+		<!--css-->
+		<style>
+			body {
+				background: #ffd;
+			}
+		</style>
+		<!--css-->
+	</head>
+	<body>
+
+		<h1>BarChart I</h1>
+		<!--html-->
+		<div
+			class="barchart"
+			data-width="300"
+			data-height="300"
+		/>
+		<!--html-->
+
+	</body>
+</html>

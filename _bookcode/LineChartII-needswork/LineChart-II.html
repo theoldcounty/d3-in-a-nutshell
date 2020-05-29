@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>LineChart II</title>
+
+		<!--libs-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://d3js.org/d3.v4.min.js"></script>
+
+		<!--js-->
+		<script>
+			
+			$(document).ready(function() {
+				//d3 cookbook - LineChart I
+
+				var $this = $('.linechart');
+				//////////
+			        var data = [{
+			          "date": "20111003",
+			          "New York": 53.3,
+			          "San Francisco": 22.8
+			        }, {
+			          "date": "20111004",
+			          "New York": 55.7,
+			          "San Franciscok": 38.8
+			        }, {
+			          "date": "20111005",
+			          "New York": 55.7,
+			          "San Franciscok": 38.8
+			        }];
+
+
+			        var cities = [{
+			          "id": "New York",
+			          "values": [{
+			            "date": 20111003,
+			            "temperature": 34
+			          }, {
+			            "date": 20111004,
+			            "temperature": 42
+			          }, {
+			            "date": 20111005,
+			            "temperature": 23
+			          }]
+			        }, {
+			          "id": "San Francisco",
+			          "values": [{
+			            "date": 20111003,
+			            "temperature": 22
+			          }, {
+			            "date": 20111004,
+			            "temperature": 52
+			          }, {
+			            "date": 20111005,
+			            "temperature": 62
+			          }]
+			        }]
+			        
+
+			        var width = $this.data('width'),
+			            height = $this.data('height');
+
+			        var color = d3.scaleOrdinal()
+			            .range(["#ff5200", "pink", "brown"]);
+
+					var parseTime = d3.timeParse("%Y%m%d");
+
+					var margin = {top: 20, right: 15, bottom: 30, left: 20},
+					    width = width - margin.left - margin.right,
+					    height = height - margin.top - margin.bottom;
+
+					var x = d3.scaleTime().range([0, width]);
+					var y = d3.scaleLinear().range([height, 0]);
+
+			        var valueline = d3.line()
+			          .curve(d3.curveBasis)
+			          .x(function(d) { return x(d.date); })
+			          .y(function(d) { return y(d.temperature); });
+
+			        x.domain(d3.extent(data, function(d) { return d.date; }));
+
+			        y.domain([
+			        	d3.min(cities, function(c) { return d3.min(c.values, function(d) { return d.temperature; }); }),
+			          	d3.max(cities, function(c) { return d3.max(c.values, function(d) { return d.temperature; }); })
+			        ]);
+
+			        var z = d3.scaleOrdinal(d3.schemeCategory10);
+			        z.domain(cities.map(function(c) {
+			          return c.id;
+			        }));
+
+			        var svg = d3.select($this[0])
+			        	.append("svg")
+			            .attr("width", width + margin.left + margin.right)
+			            .attr("height", height + margin.top + margin.bottom)
+						.append("g")
+						.attr('class', 'linechart')
+						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+					var lines = svg.append('g').attr('class', 'lines');
+
+			        var line = lines.selectAll(".city")
+			          .data(cities)
+			          .enter().append("g")
+			          .attr("class", "city");
+
+
+					line.append("path")
+						.attr("class", "line")
+						.attr("d", function(d) {
+							return valueline(d.values);
+						})
+						.attr('stroke', function(d, i) {
+							return color(i);
+						});
+			
+			        line.append("text")
+			          .datum(function(d) {
+			            return {
+			              id: d.id,
+			              value: d.values[d.values.length - 1]
+			            };
+			          })
+			          .attr("transform", function(d) {
+			            return "translate(" + x(d.value.date) + "," + y(d.value.temperature) + ")";
+			          })
+			          .attr("x", 3)
+			          .attr("dy", "0.35em")
+			          .style("font", "10px sans-serif")
+			          .text(function(d) {
+			            return d.id;
+			          });
+
+						
+					lines.append("g")
+					  .attr("transform", "translate(0," + height + ")")
+					  .call(d3.axisBottom(x));
+					  //.ticks(d3.timeMonth.every(1)).tickFormat(d3.timeFormat("%b"))
+
+					lines.append("g")
+						.call(d3.axisLeft(y))
+						.append("text")
+						.attr("transform", "rotate(-90)")
+						.attr("y", 6)
+						.attr("dy", "0.71em")
+						.attr("fill", "#000")
+						.text("Temperature, ºF");
+
+				//d3 cookbook - LineChart II
+
+			});
+
+		</script>
+		<!--js-->
+
+		<!--css-->
+		<style>
+			body {
+				background: #ffd;
+			}
+
+			.line {
+			  fill: none;
+			  stroke-width: 2px;
+			}
+
+		</style>
+		<!--css-->
+	</head>
+	<body>
+
+		<h1>LineChart II</h1>
+		<!--html-->
+		<div
+			class="linechart"
+			data-width="300"
+			data-height="300"
+		/>
+		<!--html-->
+
+	</body>
+</html>
