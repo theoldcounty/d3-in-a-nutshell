@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>FootPath</title>
+
+		<!--libs-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://d3js.org/d3.v4.min.js"></script>
+
+		<!--js-->
+		<script>
+			
+			$(document).ready(function() {
+				//d3 cookbook - Footpath
+
+				var $this = $('.footpath');
+
+ 				var data = {
+				        layout: [{
+							"x": 30,
+							"y": 50,
+							"id": 1,
+							"type": "gate"
+						},{
+							"x": 90,
+							"y": 30,
+							"id": 2,
+							"type": "gate"
+						},{
+							"x": 65,
+							"y": 70,
+							"id": 3,
+							"type": "corner"
+						},{
+							"x": 165,
+							"y": 60,
+							"id": 4,
+							"type": "corner"
+						}, {
+							"x": 220,
+							"y": 50,
+							"id": 5,
+							"type": "gate"
+						},{
+							"x": 310,
+							"y": 105,
+							"id": 6,
+							"type": "corner"
+						}, {
+							"x": 350,
+							"y": 150,
+							"id": 7,
+							"type": "gate"
+						},{
+							"x": 270,
+							"y": 130,
+							"id": 8,
+							"type": "corner"
+						}, {
+							"x": 240,
+							"y": 220,
+							"id": 9,
+							"type": "gate"
+						},{
+							"x": 270,
+							"y": 210,
+							"id": 10,
+							"type": "corner"
+						}],
+						journeys: [{
+							"journey": [1,3,4,5,6,7],
+							"value": 200
+						},
+						{
+							"journey": [2,3,4,5,6,7],
+							"value": 100
+						},
+						{
+							"journey": [7,8,10,9],
+							"value": 40
+						}],
+				    };
+
+		        var width = $this.data('width'),
+		            height = $this.data('height');
+
+		        var color = d3.scaleOrdinal()
+		            .range(["#ff5200", "red", "blue"]);
+
+				var margin = {top: 20, right: 15, bottom: 30, left: 20},
+				    width = width - margin.left - margin.right,
+				    height = height - margin.top - margin.bottom;
+
+		        var svg = d3.select($this[0])
+		        	.append("svg")
+		            .attr("width", width + margin.left + margin.right)
+		            .attr("height", height + margin.top + margin.bottom)
+					.append("g")
+					.attr('class', 'footpath')
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+				function getCoords(id){
+					var result = $.grep(data.layout, function(e){ 
+						return e.id == id; 
+					});
+					return result[0];
+				}
+
+				var circles = svg.selectAll("circle")
+				  .data(data.layout)
+				  .enter()
+				  .append("circle");
+
+				var circleAttributes = circles
+				  .attr("cx", function(d) {
+				    return d.x;
+				  })
+				  .attr("cy", function(d) {
+				    return d.y;
+				  })
+				  .attr("r", 4)
+				  .attr("class", function(d){
+					  return d.type;
+				  });			
+
+				var total = 0;
+				data.journeys.forEach(function(d) {
+					total += d.value;
+				}); 
+
+				for (i = 0; i < data.journeys.length; i++) {     
+					drawPath(data.journeys[i], i, total);
+				}
+
+				function drawPath(j, i, total){  
+					var bezierLine = d3.line()
+						.x(function(d) { 
+							return getCoords(d).x;
+						})
+						.y(function(d) { 
+							return getCoords(d).y;
+						})
+						.curve(d3.curveBasis)
+
+					svg.append('path')
+						.attr("d", bezierLine(j.journey))
+						.attr("class", "path")
+						.attr("fill", "none")
+						.attr("opacity", j.value/total)
+						.attr('stroke', function(d) {
+							return color(i);
+						})	
+						.transition()
+						.duration(2000)
+						.attrTween("stroke-dasharray", function() {
+							var len = this.getTotalLength();
+							return function(t) { return (d3.interpolateString("0," + len, len + ",0"))(t) };
+						});
+				}
+
+				//d3 cookbook - Footpath
+			});
+
+		</script>
+		<!--js-->
+
+		<!--css-->
+		<style>
+			body {
+				background: #ffd;
+			}
+
+			.path {
+			  stroke-width: 15;
+			  stroke-linecap: round;
+			}
+
+			circle.gate{
+			  fill: #000000;
+			  stroke: #000000;
+			}
+
+			circle.corner{
+			  fill: transparent;
+			  stroke: #ff0000;
+			}
+
+		</style>
+		<!--css-->
+	</head>
+	<body>
+
+		<h1>FootPath</h1>
+		<!--html-->
+		<div
+			class="footpath"
+			data-width="600"
+			data-height="300"
+		/>
+		<!--html-->
+
+	</body>
+</html>

@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Clock</title>
+
+		<!--libs-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://d3js.org/d3.v4.min.js"></script>
+		<script src="https://d3js.org/d3-time.v1.min.js"></script>
+
+		<!--js-->
+		<script>
+			
+			$(document).ready(function() {
+				//d3 cookbook - Clock
+
+				var $this = $('.clock');
+
+		        var width = $this.data('width'),
+		            height = $this.data('height'),
+		            shadeColor = $this.data('shade-color'),
+		            handColor = $this.data('hand-color');
+
+				var fromClock = timeStringToFloat($this.data('start'));
+				var toClock = timeStringToFloat($this.data('end'));
+
+				var radius = $this.data('radius');
+
+				var formatSecond = d3.timeFormat("%S");
+				var formatMinute = d3.timeFormat("%M");
+				var formatHour = d3.timeFormat("%H");
+
+				var scaleSecsMins = d3.scaleLinear()
+					.domain([0, 59 + 59 / 60])
+					.range([0, 2 * Math.PI]);
+
+				var scaleHours = d3.scaleLinear()
+					.domain([0, 11 + 59 / 60])
+					.range([0, 2 * Math.PI]);
+
+		        var svg = d3.select($this[0])
+		        	.append("svg")
+		            .attr("width", width)
+		            .attr("height", height)
+					.append("g")
+					.attr('class', 'clock')
+					.attr("transform", "translate(" + width/2 + "," + height/2 + ")");
+
+				var clockGroup = svg.append('g').attr('class', 'face');
+
+				var arc = d3.arc()
+					.innerRadius(0)
+					.outerRadius(radius)
+					.startAngle(clockToRad(fromClock, -1))
+					.endAngle(clockToRad(toClock, 1));
+
+				clockGroup.append('path')
+					.attr('d', arc)
+					.style('fill', shadeColor);
+
+				clockGroup.append("circle")
+					.attr("r", radius)
+					.attr("fill", "none")
+					.attr("class", "clock outercircle")
+					.attr("stroke", "black")
+					.attr("stroke-width", 2);
+
+				clockGroup.append('g')
+					.attr('class', 'ticks')
+					.selectAll('path')
+					.data(splitDegrees(12))
+					.enter()
+					.append('path')
+					.attr('d', function(d) {
+					  var coord = {
+					    outer: getCoordFromCircle(d, 0, 0, radius),
+					    inner: getCoordFromCircle(d, 0, 0, radius - 10)
+					  };
+					  return 'M' + coord.outer[0] + ' ' + coord.outer[1] + 'L' + coord.inner[0] + ' ' + coord.inner[1] + 'Z';
+					})
+					.attr('stroke', 'black');
+
+				clockGroup.append("circle")
+					.attr("r", 4)
+					.attr("fill", "black")
+					.attr("class", "clock innercircle");
+
+				render(fields());
+
+				function timeStringToFloat(time) {
+					var hoursMinutes = time.split(/[.:]/);
+					var hours = parseInt(hoursMinutes[0], 10);
+
+					if (hours >= 12) {
+					  hours -= 12;
+					}
+
+					var minutes = hoursMinutes[1] ? parseInt(hoursMinutes[1], 10) : 0;
+					return hours + minutes / 60;
+				}
+
+				function degToRad(degrees) {
+					return degrees * Math.PI / 180;
+				}
+
+				function clockToRad(clock, direction) {
+					var unit = 360 / 12;
+					var degree = direction > 0 ? unit * clock : unit * clock - 360;
+					return degToRad(degree);
+				}
+
+				function getCoordFromCircle(deg, cx, cy, r) {
+					var rad = degToRad(deg);
+					var x = cx + r * Math.cos(rad);
+					var y = cy + r * Math.sin(rad);
+					return [x, y];
+				}
+
+				function splitDegrees(num) {
+					var angle = 360 / num;
+					var degrees = [];
+
+					for (var ang = 0; ang < 360; ang += angle) {
+					  degrees.push(ang);
+					}
+
+					return degrees;
+				}
+
+				function render(data) {
+					var hourArc, minuteArc, secondArc;
+
+					minuteArc = d3.arc()
+					  .innerRadius(0)
+					  .outerRadius(70)
+					  .startAngle(clockToRad(0, 1))
+					  .endAngle(clockToRad(0, 1));
+
+					hourArc = d3.arc()
+					  .innerRadius(0)
+					  .outerRadius(50)
+					  .startAngle(clockToRad(fromClock, 1))
+					  .endAngle(clockToRad(fromClock, 1));
+
+					clockGroup.selectAll(".clockhand")
+					  .data(data)
+					  .enter()
+					  .append("svg:path")
+					  .attr("d", function(d) {
+					    if (d.unit === "minutes") {
+					      return minuteArc(d);
+					    } else if (d.unit === "hours") {
+					      return hourArc(d);
+					    }
+					  })
+					  .attr("class", "clockhand")
+					  .attr("stroke", handColor)
+					  .attr("stroke-width", function(d) {
+					    if (d.unit === "minutes") {
+					      return 3;
+					    } else if (d.unit === "hours") {
+					      return 3;
+					    }
+					  })
+					  .attr("fill", "none");
+				}
+
+				function fields() {
+					var d, data, hour, minute, second;
+					d = new Date();
+					second = d.getSeconds();
+					minute = d.getMinutes();
+					hour = d.getHours() + minute / 60;
+					return data = [{
+					  "unit": "seconds",
+					  "text": formatSecond(d),
+					  "numeric": second
+					}, {
+					  "unit": "minutes",
+					  "text": formatMinute(d),
+					  "numeric": minute
+					}, {
+					  "unit": "hours",
+					  "text": formatHour(d),
+					  "numeric": hour
+					}];
+				}
+
+				//d3 cookbook - Clock
+			});
+
+		</script>
+		<!--js-->
+
+		<!--css-->
+		<style>
+			body {
+				background: #ffd;
+			}
+
+			line {
+				display: block;
+				stroke: black;
+			}
+
+			circle {
+				stroke-width: 0;
+			}
+
+		</style>
+		<!--css-->
+	</head>
+	<body>
+
+		<h1>Clock</h1>
+		<!--html-->
+		<div
+			class="clock"
+			data-width="300"
+			data-height="300"
+			data-start="11:30"
+			data-end="17:00"
+			data-hand-color="#35d0ba"
+			data-shade-color="#fe8a71"
+			data-radius="100"
+		/>
+		<!--html-->
+
+	</body>
+</html>
