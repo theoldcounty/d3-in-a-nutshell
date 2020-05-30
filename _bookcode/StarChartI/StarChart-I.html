@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>StarChart I</title>
+
+		<!--libs-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://d3js.org/d3.v4.min.js"></script>
+
+		<!--js-->
+		<script>
+			
+			$(document).ready(function() {
+				//d3 cookbook - StarChart I
+
+
+				var $this = $('.starchart');
+
+				var data = [
+				    {
+				        label: 'Snickers',
+				        value: 1,
+				    },
+				    {
+				        label: 'Nerds',
+				        value: 60,
+				    },
+				    {
+				        label: 'Jelly Belly',
+				        value: 5,
+				    },
+				    {
+				        label: 'Hershey Bar',
+				        value: 1,
+				    }
+				];
+
+				var oldData = "";
+
+		        var width = $this.data('width'),
+		            height = $this.data('height'),
+		            radius = $this.data('r'),
+		            innerradius = $this.data("ir");
+
+		        var color = d3.scaleOrdinal()
+		            .range(["#a8e6cf", "#dcedc1", "#ffd3b6", "#ffaaa5"]);
+
+		        var svg = d3.select($this[0])
+		        	.append("svg")
+		            .attr("width", width)
+		            .attr("height", height)
+					.append("g")
+					.attr('class', 'starchart')
+					.attr("transform", "translate(" + width / 2 + "," + height / 2 + ")");
+
+				var segments = svg.append('g').attr('class', 'segments');
+				
+
+		        var arcpaths = segments.append("g")
+		          .attr("class", "arcpaths");
+		              
+
+		        var radiusControl = 0;
+		        //more than 2 results
+		        if(data.length <=2){
+		          radiusControl = 30;//make the radius smaller to compromise with there being less results
+		        }
+
+		        radius = radius - radiusControl;
+
+
+			    var data = setData(data, true);
+
+		        $.each(data, function(index, value) {
+		          if(oldData[index] != undefined){
+		            data[index]["previousEndAngle"] = oldData[index].endAngle;
+		          }
+		          else{
+		            data[index]["previousEndAngle"] = 0;
+		          }
+		        });   
+		                
+
+		        var arcpaths = arcpaths.selectAll("path")
+		            .data(data);
+		    
+		          arcpaths.enter().append("path")
+		            .style("fill", function(d, i){
+		              return color(i);
+		            })
+		            .transition()
+		            .ease(d3.easeElastic)
+		            .duration(750)
+		            .attrTween("d", arcTween);         
+		          
+		          arcpaths.transition()
+		            .ease(d3.easeElastic)                 
+		            .style("fill", function(d, i){
+		              return color(i);
+		            })
+		            .duration(750)
+		            .attrTween("d",arcTween);
+		           
+		          arcpaths.exit().transition()
+		            .ease(d3.easeBounce)
+		            .duration(750)
+		            .attrTween("d", arcTween)
+		            .remove();
+
+		        function arcTween(b) {       
+		          var prev = JSON.parse(JSON.stringify(b));
+		          prev.endAngle = b.previousEndAngle;
+		          var i = d3.interpolate(prev, b);
+
+		          return function(t) {
+		            return getArc()(i(t));
+		          };
+		        }
+
+
+				function getArc(){
+					var arc = d3.arc()
+						.innerRadius(function(d, i){
+							return radius-innerradius;
+						})
+						.outerRadius(function(d){
+							var maxHeight = height/2;
+							var ratio = (d.value/maxHeight * 100)+ radius;
+							return ratio;
+						})
+						.startAngle(function(d, i){
+							return d.startAngle;
+						})
+						.endAngle(function(d, i){
+							return d.endAngle;
+						});
+
+						return arc;
+				}
+
+
+				function setData(data, isSorted){					
+					var displacement = 0;
+					var arcPartition = 2*Math.PI/data.length;
+
+		            $.each(data, function(ri, value) {
+						var startAngle = (ri*arcPartition);
+						var endAngle = ((ri+1)*arcPartition);
+
+						if(ri!=0){
+							startAngle+=displacement;
+							endAngle+=displacement;
+						}
+
+						data[ri]["startAngle"] = startAngle;
+						data[ri]["endAngle"] = endAngle;       
+		            });
+		        
+			        return data;
+			    }
+ 
+
+		        //legend
+		        var legendsvgw = 150;
+		        var legendsvgh = 100;
+
+				var ringRadius = 5;
+				var vertical = 20;
+
+		        var legendsvg = d3.select($this[0])
+		        	.append("svg")
+		            .attr("width", legendsvgw)
+		            .attr("height", legendsvgh)
+					.append("g")
+					.attr('class', 'legendsvg')
+					.attr("transform", "translate(" + 10 + "," + 10 + ")");
+
+				var legend = legendsvg.append("g")
+					.attr("class", "legend");
+
+
+				var labels = legend.selectAll("text.labels")
+				        .data(data);
+
+				labels.enter().append("text")
+				  .attr("class", "labels")
+				  .attr("dx", 15)
+				  .attr("dy", function(d, i) {
+				    return (vertical * i) + ringRadius*2;
+				  })
+				  .attr("text-anchor", function(d) {
+				    return "start";
+				  })
+				  .text(function(d) {
+				    return d.label;
+				  });
+
+				labels.exit().remove();
+
+
+				var ring = legend.selectAll("circle")
+				        .data(data);
+
+				ring.enter().append("circle")
+				  .attr("cy", function(d, i) {
+				    return (vertical * i) + ringRadius;
+				  })
+				  .attr("r", ringRadius)
+				  .attr("width", ringRadius*2)
+				  .attr("height", ringRadius*2)
+				  .style("fill", function(d, i) {
+				    return color(i);
+				  });
+
+				ring.exit().remove();
+
+
+				//d3 cookbook - StarChart I
+			});
+
+		</script>
+		<!--js-->
+
+		<!--css-->
+		<style>
+			body {
+				background: #ffd;
+			}
+
+			.arc path {
+				stroke: #fff;
+			}
+
+		</style>
+		<!--css-->
+	</head>
+	<body>
+
+		<h1>StarChart I</h1>
+		<!--html-->
+		<div
+			class="starchart"
+			data-width="300"
+			data-height="300"
+			data-r="70"
+			data-ir="60"
+		/>
+		<!--html-->
+
+	</body>
+</html>

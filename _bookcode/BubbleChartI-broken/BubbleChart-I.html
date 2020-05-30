@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>BubbleChart I</title>
+
+		<!--libs-->
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+		<script src="https://d3js.org/d3.v4.min.js"></script>
+
+		<!--js-->
+		<script>
+			
+			$(document).ready(function() {
+				//d3 cookbook - BubbleChart I
+
+				var $this = $('.bubblechart');
+
+				var data  = [{
+					"label": "Chinese",
+					"value": 20
+				}, {
+					"label": "American",
+					"value": 10
+				}, {
+					"label": "Indian",
+					"value": 50
+				}];
+
+		        var width = $this.data('width'),
+		            height = $this.data('height');
+
+		        var color = d3.scaleOrdinal()
+		            .range(["#ff5200", "red", "green"]);
+
+		         
+
+				var margin = {top: 20, right: 15, bottom: 30, left: 20},
+				    width = width - margin.left - margin.right,
+				    height = height - margin.top - margin.bottom;
+
+				 
+
+		        var svg = d3.select($this[0])
+		        	.append("svg")
+		            .attr("width", width + margin.left + margin.right)
+		            .attr("height", height + margin.top + margin.bottom)
+					.append("g")
+					.attr('class', 'bubblechart')
+					.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+				var bubbles = svg.append('g').attr('class', 'bubbles');
+
+
+
+			var force = d3.forceSimulation()
+			    .force("collide", d3.forceCollide(12))
+			    .force("center", d3.forceCenter(width / 2, height / 2))
+			    .nodes(data)
+			    //.on("tick", tick);
+
+                                
+                var bubbles = svg.append("g")
+                    .attr("class", "bubbles")
+                      
+
+                data = funnelData(data, width, height);
+                            
+				var padding = 4;
+				var maxRadius = d3.max(data, function (d) { return parseInt(d.radius)});
+
+				var scale = (width/6)/100;                                                    
+                        
+                        
+                var nodes = bubbles.selectAll("circle")
+                  .data(data);
+
+                        
+                // Enter
+                nodes.enter()
+                    .append("circle")
+                    .attr("class", "node")
+                    .attr("cx", function (d) { return d.x; })
+                    .attr("cy", function (d) { return d.y; })
+                    .attr("r", 10)
+                    .style("fill", function (d, i) { 
+                      return color(i);
+                    })
+                    //.call(d3.drag());
+
+                // Update
+                nodes
+                    .transition()
+                    .delay(300)
+                    .duration(1000)
+                      .attr("r", function (d) { 
+                        return d.radius * scale; 
+                      })
+
+                // Exit
+                nodes.exit()
+                    .transition()
+                    .duration(250)
+                    .attr("cx", function (d) { return d.x; })
+                    .attr("cy", function (d) { return d.y; })
+                    .attr("r", 1)
+                    .remove();
+                                
+   
+                draw('all');
+
+
+                 function funnelData(data, width, height){
+		              function getRandom(min, max){
+		                return Math.floor(Math.random() * (max - min + 1)) + min;         
+		              }
+
+		              var max_amount = d3.max(data, function (d) { return parseInt(d.value)})
+		              var radius_scale = d3.scalePow().exponent(0.5).domain([0, max_amount]).range([2, 85])
+		            
+		              $.each(data, function(index, elem) {
+		                elem.radius = radius_scale(elem.value)*.8;
+		                elem.all = 'all';
+		                elem.x = getRandom(0, width); 
+		                elem.y = getRandom(0, height);
+		              });   
+		              
+		              return data;
+		          }
+
+                 
+                function draw (varname) {
+                  var foci = { "all": {name:"All", x: width/2, y: height/2}};
+                  //force.on("tick", tick(foci, varname, .55));
+                  //force.start();
+                }
+
+                function tick (foci, varname, k) {
+                  return function (e) {
+	                  data.forEach(function(o, i) {
+	                    var f = foci[o[varname]];
+	                    o.y += (f.y - o.y) * k * e.alpha;
+	                    o.x += (f.x - o.x) * k * e.alpha;
+	                  });
+
+	                  nodes
+	                    .each(collide(.1))
+	                    .attr("cx", function (d) { return d.x; })
+	                    .attr("cy", function (d) { return d.y; });
+	                            
+
+	                  }
+                }
+
+
+                function collide(alpha) {
+                  var quadtree = d3.geom.quadtree(data);
+                  return function(d) {
+                  var r = d.radius + maxRadius + padding,
+                    nx1 = d.x - r,
+                    nx2 = d.x + r,
+                    ny1 = d.y - r,
+                    ny2 = d.y + r;
+                  quadtree.visit(function(quad, x1, y1, x2, y2) {
+                    if (quad.point && (quad.point !== d)) {
+                    var x = d.x - quad.point.x,
+                      y = d.y - quad.point.y,
+                      l = Math.sqrt(x * x + y * y),
+                      r = d.radius + quad.point.radius + padding;
+                    if (l < r) {
+                      l = (l - r) / l * alpha;
+                      d.x -= x *= l;
+                      d.y -= y *= l;
+                      quad.point.x += x;
+                      quad.point.y += y;
+                    }
+                    }
+                    return x1 > nx2 || x2 < nx1 || y1 > ny2 || y2 < ny1;
+                  });
+                  };
+                }
+
+
+
+				//d3 cookbook - BubbleChart I
+			});
+
+		</script>
+		<!--js-->
+
+		<!--css-->
+		<style>
+			body {
+				background: #ffd;
+			}
+
+			.line {
+			  fill: none;
+			  stroke-width: 2px;
+			}
+
+		</style>
+		<!--css-->
+	</head>
+	<body>
+
+		<h1>BubbleChart I</h1>
+		<!--html-->
+		<div
+			class="bubblechart"
+			data-width="300"
+			data-height="300"
+		/>
+		<!--html-->
+
+	</body>
+</html>
